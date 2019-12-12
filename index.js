@@ -8,7 +8,8 @@ module.exports = async function init(options = {}) {
             rpcExchange: 'jobs',
             rabbitmqURL: '',
             scriptsPath: 'events',
-            prefetch: 0
+            prefetch: 0,
+            dirname: __dirname
         },
         options
     )
@@ -34,7 +35,7 @@ module.exports = async function init(options = {}) {
     const ch = await conn.createChannel()
     ch.prefetch(options.prefetch)
 
-    for (let { route, func, file } of getPathFunctions(options.scriptsPath)) {
+    for (let { route, func, file } of getPathFunctions(options.scriptsPath, options.dirname)) {
         let funcOptions = { noAck: false }
         if (funcOptions.options) {
             funcOptions = Object.assign(funcOptions, func.options)

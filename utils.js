@@ -10,20 +10,20 @@ function getFiles(dir) {
     return files.flat()
 }
 
-function file2Route(file, folder, func) {
+function file2Route(dirname, file, folder, func) {
     let ending = ''
     if (func !== 'default' && func) {
         ending = `.${func}`
     }
     return (
         file
-            .replace(`${__dirname}/${folder}/`, '')
+            .replace(`${dirname}/${folder}/`, '')
             .replace(/\//g, '.')
             .replace(/\..{1,3}$/, '') + ending
     )
 }
 
-function* getPathFunctions(path) {
+function* getPathFunctions(path, dirname) {
     const files = getFiles(path)
     const functionsMap = {}
     for (let file of files) {
@@ -31,7 +31,7 @@ function* getPathFunctions(path) {
             const required = require(file)
             const functions = Object.keys(required)
             if (typeof required === 'function') {
-                const route = file2Route(file, path)
+                const route = file2Route(dirname, file, path)
                 yield { route, func: required, file }
             }
             for (let func of functions) {
