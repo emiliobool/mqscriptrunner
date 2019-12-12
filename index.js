@@ -2,7 +2,7 @@ const amqp = require('amqplib')
 const { getPathFunctions, wrapFunction } = require('./utils')
 
 module.exports = async function init(options = {}) {
-    this.options = Object.assign(
+    options = Object.assign(
         {
             exchange: 'events',
             rpcExchange: 'jobs',
@@ -12,7 +12,7 @@ module.exports = async function init(options = {}) {
         },
         options
     )
-    const conn = await amqp.connect(this.rabbitmqURL)
+    const conn = await amqp.connect(options.rabbitmqURL)
     conn.on('error', function(err) {
         if (err.message !== 'Connection closing') {
             console.error('[AMQP] conn error', err.message)
@@ -27,25 +27,25 @@ module.exports = async function init(options = {}) {
     console.log('Connected to RabbitMQ Server')
 
     const mainChannel = await conn.createChannel()
-    mainChannel.assertExchange(this.exchange, 'topic', {
+    mainChannel.assertExchange(options.exchange, 'topic', {
         durable: true
     })
 
     const ch = await conn.createChannel()
-    ch.prefetch(this.prefetch)
+    ch.prefetch(options.prefetch)
 
     for (let { route, func, file } of getPathFunctions(scriptsPath)) {
-        let options = { noAck: false }
-        if (func.options) {
-            options = Object.assign(options, func.options)
+        let funcOptions = { noAck: false }
+        if (funcOptions.options) {
+            funcOptions = Object.assign(funcOptions, func.options)
         }
-        console.log(`Setting up '${route}' from '${file}'`, options)
+        console.log(`Setting up '${route}' from '${file}'`, funcOptions)
         const q = await ch.assertQueue('', { exclusive: true })
-        await ch.bindQueue(q.queue, this.exchange, route)
+        await ch.bindQueue(q.queue, options.exchange, route)
         ch.consume(
             q.queue,
-            wrapFunction(func, ch, q, this.exchange, this.rpcExchange),
-            options
+            wrapFunction(func, ch, q, options.exchange, options.rpcExchange),
+            funcOptions
         )
     }
 }
