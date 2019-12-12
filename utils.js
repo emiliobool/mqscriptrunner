@@ -48,23 +48,31 @@ function* getPathFunctions(path, dirname) {
 const EventEmitter = require('events')
 const uuid = require('uuid/v1')
 const rpcEmitter = new EventEmitter()
-function wrapFunction(func, ch, q, replyQ, exchange, rpcExchange, resultExchange) {
-    
+function wrapFunction(
+    func,
+    ch,
+    q,
+    replyQ,
+    exchange,
+    rpcExchange,
+    resultExchange
+) {
     ch.consume(replyQ.queue, msg => {
-            const correlationId = msg.properties.correlationId
-            rpcEmitter.emit(correlationId, msg)
-        })
+        const correlationId = msg.properties.correlationId
+        rpcEmitter.emit(correlationId, msg)
+    })
     const self = {
         ch,
         async fire(topic, payload) {
-            return ch.publish(
-                'events',
-                topic,
-                Buffer.from(JSON.stringify(payload)),
-                {
-                    contentType: 'application/json'
-                }
-            )
+            return this.publish(resultExchange, topic, payload)
+        },
+        async publish(ex, topic, payload) {
+            return ch.publish(ex, topic, Buffer.from(JSON.stringify(payload)), {
+                contentType: 'application/json'
+            })
+        },
+        async job(topic, payload) {
+            return this.publish(rpcExchang, topic, payload)
         },
         rpcJob(topic, payload, ex = null, timeout = 10000) {
             return new Promise(function(resolve, reject) {
@@ -73,11 +81,16 @@ function wrapFunction(func, ch, q, replyQ, exchange, rpcExchange, resultExchange
                 }, timeout)
                 const correlationId = uuid()
 
-                ch.publish(ex || rpcExchange, topic, Buffer.from(JSON.stringify(payload)), {
-                    contentType: 'application/json',
-                    correlationId,
-                    replyTo: replyQ.queue
-                })
+                ch.publish(
+                    ex || rpcExchange,
+                    topic,
+                    Buffer.from(JSON.stringify(payload)),
+                    {
+                        contentType: 'application/json',
+                        correlationId,
+                        replyTo: replyQ.queue
+                    }
+                )
                 rpcEmitter.once(correlationId, msg => {
                     clearTimeout(timeoutId)
                     msg.content = JSON.parse(msg.content.toString())
