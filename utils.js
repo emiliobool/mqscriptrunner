@@ -80,6 +80,7 @@ function wrapFunction(func, ch, q, replyQ, exchange, rpcExchange, resultExchange
                 })
                 rpcEmitter.once(correlationId, msg => {
                     clearTimeout(timeoutId)
+                    msg.content = JSON.parse(msg.content.toString())
                     resolve(msg)
                 })
             })
