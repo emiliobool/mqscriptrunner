@@ -2,5 +2,9 @@
   "name": "mqscriptrunner",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^3.3.3",
+    "amqplib": "^0.5.5"
+  }
 }
