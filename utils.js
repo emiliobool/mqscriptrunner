@@ -68,14 +68,14 @@ function wrapFunction(func, ch, q, exchange, rpcExchange, resultExchange) {
                 }
             )
         },
-        rpcJob(topic, payload, ex, timeout = 10000) {
+        rpcJob(topic, payload, ex = null, timeout = 10000) {
             return new Promise(function(resolve, reject) {
                 const timeoutId = setTimeout(() => {
                     reject(`Timed out after ${timeout} ms.`)
                 }, timeout)
                 const correlationId = uuid()
 
-                ch.publish(ex | rpcExchange, topic, Buffer.from(JSON.stringify(payload)), {
+                ch.publish(ex || rpcExchange, topic, Buffer.from(JSON.stringify(payload)), {
                     contentType: 'application/json',
                     correlationId,
                     replyTo: q.queue
