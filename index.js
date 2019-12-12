@@ -34,7 +34,7 @@ module.exports = async function init(options = {}) {
     const ch = await conn.createChannel()
     ch.prefetch(options.prefetch)
 
-    for (let { route, func, file } of getPathFunctions(scriptsPath)) {
+    for (let { route, func, file } of getPathFunctions(options.scriptsPath)) {
         let funcOptions = { noAck: false }
         if (funcOptions.options) {
             funcOptions = Object.assign(funcOptions, func.options)
