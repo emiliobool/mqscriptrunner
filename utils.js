@@ -36,7 +36,7 @@ function* getPathFunctions(path, dirname) {
             }
             for (let func of functions) {
                 if (typeof required[func] === 'function') {
-                    const route = file2Route(file, path, func)
+                    const route = file2Route(dirname, file, path, func)
                     yield { route, func: required[func], file }
                 }
             }
