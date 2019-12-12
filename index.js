@@ -22,9 +22,7 @@ module.exports = async function init(options = {}) {
     })
     conn.on('close', function() {
         console.error('[AMQP] Disconnected')
-        setTimeout(() => {
-            process.exit(2)
-        }, 1000)
+        restart()
     })
     console.log('Connected to RabbitMQ Server')
 
@@ -36,7 +34,10 @@ module.exports = async function init(options = {}) {
     const ch = await conn.createChannel()
     ch.prefetch(options.prefetch)
 
-    for (let { route, func, file } of getPathFunctions(options.scriptsPath, options.dirname)) {
+    for (let { route, func, file } of getPathFunctions(
+        options.scriptsPath,
+        options.dirname
+    )) {
         let funcOptions = { noAck: false }
         if (funcOptions.options) {
             funcOptions = Object.assign(funcOptions, func.options)
@@ -44,12 +45,33 @@ module.exports = async function init(options = {}) {
         console.log(`Setting up '${route}' from '${file}'`, funcOptions)
         const q = await ch.assertQueue('', { exclusive: true })
         const replyQ = await ch.assertQueue('', { exclusive: true })
-        
+
         await ch.bindQueue(q.queue, options.exchange, route)
         ch.consume(
             q.queue,
-            wrapFunction(func, ch, q, replyQ, options.exchange, options.rpcExchange, options.resultExchange),
+            wrapFunction(
+                func,
+                ch,
+                q,
+                replyQ,
+                options.exchange,
+                options.rpcExchange,
+                options.resultExchange
+            ),
             funcOptions
         )
     }
+}
+
+function restart() {
+    setTimeout(function() {
+        process.on('exit', function() {
+            require('child_process').spawn(process.argv.shift(), process.argv, {
+                cwd: process.cwd(),
+                detached: true,
+                stdio: 'inherit'
+            })
+        })
+        process.exit()
+    }, 3000)
 }
