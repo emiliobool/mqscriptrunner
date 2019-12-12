@@ -5,6 +5,7 @@ module.exports = async function init(options = {}) {
     options = Object.assign(
         {
             exchange: 'events',
+            resultExchange: 'events',
             rpcExchange: 'jobs',
             rabbitmqURL: '',
             scriptsPath: 'events',
@@ -45,7 +46,7 @@ module.exports = async function init(options = {}) {
         await ch.bindQueue(q.queue, options.exchange, route)
         ch.consume(
             q.queue,
-            wrapFunction(func, ch, q, options.exchange, options.rpcExchange),
+            wrapFunction(func, ch, q, options.exchange, options.rpcExchange, options.resultExchange),
             funcOptions
         )
     }

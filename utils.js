@@ -48,7 +48,7 @@ function* getPathFunctions(path, dirname) {
 const EventEmitter = require('events')
 const uuid = require('uuid/v1')
 const rpcEmitter = new EventEmitter()
-function wrapFunction(func, ch, q, exchange, rpcExchange) {
+function wrapFunction(func, ch, q, exchange, rpcExchange, resultExchange) {
     ch.assertQueue('', { exclusive: true }).then((replyQ) => {
         ch.consume(replyQ.queue, msg => {
             const correlationId = msg.properties.correlationId
@@ -96,7 +96,7 @@ function wrapFunction(func, ch, q, exchange, rpcExchange) {
             } catch (error) {
                 console.error(error)
                 ch.publish(
-                    exchange,
+                    resultExchange,
                     `${msg.fields.routingKey}.error`,
                     Buffer.from(
                         JSON.stringify(error, Object.getOwnPropertyNames(error))
@@ -113,7 +113,7 @@ function wrapFunction(func, ch, q, exchange, rpcExchange) {
             } else {
                 if (result) {
                     ch.publish(
-                        exchange,
+                        resultExchange,
                         `${msg.fields.routingKey}.result`,
                         Buffer.from(JSON.stringify(result)),
                         { contentType: 'application/json' }
