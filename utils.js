@@ -105,6 +105,7 @@ function wrapFunction(func, ch, q, exchange, rpcExchange, resultExchange) {
                 )
             }
             if (msg.properties.replyTo) {
+                console.log('replyingTo', msg.properties.replyTo)
                 ch.sendToQueue(
                     msg.properties.replyTo,
                     Buffer.from(JSON.stringify(result)),
